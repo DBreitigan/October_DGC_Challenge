@@ -1,225 +1,109 @@
-//Type node index.js to run
-//Use nodemon index.js to auto-reload when changes are made
-// if nodemon isnt installed: npm install -g nodemon
+/************************************************
+ ****** Boolean Gate Truth Table Generator ******
+ ************************************************/
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 
-//use bodyParser() to let us get the data from a POST
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.put('/', function (req, res) {
-  var newString = stringChecker(req.body.expr);
-  var Evaluation = booleanLogic(newString);
-  res.send(({"formaula" : req.body.expr,
+
+  var stringChecker = StringChecker(req.body.expr);
+  var Evaluation = stringEvaluator(stringChecker.finalString, stringChecker.conditionCounter);
+  res.send(({"formula" : stringChecker.finalString,
               "evaluation": Evaluation}));
 });
 
-function stringChecker(input) {
+function StringChecker(input) {
   spaceCount = (input.split(" ").length - 1);
-  console.log(spaceCount.toString());
-  console.log(Number(1).toString(2));
   var stringArray = input.split(" ");
-  var newString = ""
+  var finalString = "";
+  var conditionCounter = 0;
   for(i = 0; i < stringArray.length; i++) {
     if(stringArray[i] == "AND")
     {
-      stringArray[i] = "&&"
+      stringArray[i] = "&";
+      conditionCounter++;
     }
     if(stringArray[i] == "OR")
     {
-      stringArray[i] = "||"
+      stringArray[i] = "|";
+      conditionCounter++;
     }
-    var newString = newString + stringArray[i] + " "
+    var finalString = finalString + stringArray[i] + " ";
   }
-  return newString;
+  return { "finalString": finalString, "conditionCounter": conditionCounter }
 }
 
-function booleanLogic(input) {
-  var spaceCount = (input.split(" ").length - 1);
+function stringEvaluator(finalString, conditionCounter)
+{
+  var numOfBooleans = conditionCounter + 1;
+  var numOfUniqueCombinations = Math.pow(2, numOfBooleans);
+  
+  var finalStringArray = EvaluatableString(finalString.split(""), "stringArray");
+
+  finalString = finalStringArray.join("") 
+
   var evaluation = []
-  if(spaceCount == 3)
+  for(i = 0; i < numOfUniqueCombinations; i++)
   {
-    var stringArray = input.split(" ");
-    console.log(stringArray);
-    if(stringArray[1] == ("&&")){
-    
-      for(i = 0; i <= 3; i++)
-      {
-        truthTable = [false, false]
-        var result = false; 
-        var boolValue = Number(i).toString(2);
-        var stringArray = boolValue.split("");
-        stringArray.reverse();
-        for(j = 0; j < stringArray.length; j++)
-        {
-          if(stringArray[j] == "1")
-          {
-            truthTable[j] = true;
-          }
-        }
-
-        if(truthTable[0] && truthTable[1])
-        {
-          result = true;
-        }
-
-        evaluation.push({
-          "values": truthTable.toString(),
-          "result": result
-        })
-        console.log(truthTable.toString());
-      }
-      console.log(evaluation);
-    }
-    else {
-      for(i = 0; i <= 3; i++)
-      {
-        truthTable = [false, false]
-        var result = false; 
-        var boolValue = Number(i).toString(2);
-        var stringArray = boolValue.split("");
-        stringArray.reverse();
-        for(j = 0; j < stringArray.length; j++)
-        {
-          if(stringArray[j] == "1")
-          {
-            truthTable[j] = true;
-          }
-        }
-
-        if(truthTable[0] || truthTable[1])
-        {
-          result = true;
-        }
-
-        evaluation.push({
-          "values": truthTable.toString(),
-          "result": result
-        })
-        console.log(truthTable.toString());
-      }
-      console.log(evaluation);
-
-    }
-  } else {
-    var stringArray = input.split(" ");
-    if(stringArray[1] == ("&&"))
+    var booleanArray = createBooleanArray(numOfBooleans);
+    var result = false; 
+    var boolValue = Number(i).toString(2);
+    var stringArray = boolValue.split("");
+    stringArray.reverse();
+    for(j = 0; j < stringArray.length; j++)
     {
-
-      for(i = 0; i <= 7; i++)
+      if(stringArray[j] == "1")
       {
-        truthTable = [false, false, false]
-        var result = false; 
-        var boolValue = Number(i).toString(2);
-        var stringArray = boolValue.split("");
-        stringArray.reverse();
-        for(j = 0; j < stringArray.length; j++)
-        {
-          if(stringArray[j] == "1")
-          {
-            truthTable[j] = true;
-          }
-        }
-
-        if(truthTable[0] && (truthTable[1] || truthTable[2]))
-        {
-          result = true;
-        }
-
-        evaluation.push({
-          "values": truthTable.toString(),
-          "result": result
-        })
-        console.log(truthTable.toString());
+        booleanArray[j] = true;
       }
-      console.log(evaluation);
-    } else {
-      for(i = 0; i <= 7; i++)
-      {
-        truthTable = [false, false, false]
-        var result = false; 
-        var boolValue = Number(i).toString(2);
-        var stringArray = boolValue.split("");
-        stringArray.reverse();
-        for(j = 0; j < stringArray.length; j++)
-        {
-          if(stringArray[j] == "1")
-          {
-            truthTable[j] = true;
-          }
-        }
-
-        if(truthTable[0] || (truthTable[1] && truthTable[2]))
-        {
-          result = true;
-        }
-
-        evaluation.push({
-          "values": truthTable.toString(),
-          "result": result
-        })
-        console.log(truthTable.toString());
-      }
-      console.log(evaluation);
     }
 
+    if(eval(finalString))
+    {
+      result = true;
+    }
 
+    evaluation.push({
+      "values": booleanArray.toString(),
+      "result": result
+    })
 
   }
   return evaluation;
 }
 
+function EvaluatableString(stringArray, arrayName) {
+  var arrayCounter = 0;
+  
+  for(i = 0; i < stringArray.length; i++){
+    if(!(stringArray[i] == "&" ||
+        stringArray[i] == "|" ||
+        stringArray[i] == "(" ||
+        stringArray[i] == ")" ||
+        stringArray[i] == " "))
+    {
+      stringArray[i] = " " + arrayName + "[" + arrayCounter + "] ";
+      arrayCounter++;
+    }
+  }
+
+  return stringArray;
+}
+
+function createBooleanArray(arraySize) {
+  var array = []
+  for(k = 0; k < arraySize; k++)
+  {
+    array.push(false);
+  }
+  return array;
+}
+
 app.listen(3000, function () {
   console.log("Listening to port 3000!");
 });
-
-
-(function(){
-
-    var ConvertBase = function (num) {
-        return {
-            from : function (baseFrom) {
-                return {
-                    to : function (baseTo) {
-                        return parseInt(num, baseFrom).toString(baseTo);
-                    }
-                };
-            }
-        };
-    };
-        
-    // binary to decimal
-    ConvertBase.bin2dec = function (num) {
-        return ConvertBase(num).from(2).to(10);
-    };
-    
-    // binary to hexadecimal
-    ConvertBase.bin2hex = function (num) {
-        return ConvertBase(num).from(2).to(16);
-    };
-    
-    // decimal to binary
-    ConvertBase.dec2bin = function (num) {
-        return ConvertBase(num).from(10).to(2);
-    };
-    
-    // decimal to hexadecimal
-    ConvertBase.dec2hex = function (num) {
-        return ConvertBase(num).from(10).to(16);
-    };
-    
-    // hexadecimal to binary
-    ConvertBase.hex2bin = function (num) {
-        return ConvertBase(num).from(16).to(2);
-    };
-    
-    // hexadecimal to decimal
-    ConvertBase.hex2dec = function (num) {
-        return ConvertBase(num).from(16).to(10);
-    };
-    
-    this.ConvertBase = ConvertBase;
-    
-})(this);
